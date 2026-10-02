@@ -12,6 +12,27 @@ This v0.1 release is intentionally a thin, runnable vertical slice:
 
 It does **not** claim to run a real VLA by default. Real policies belong behind explicit adapters so that model versions, camera preprocessing, action chunking, and simulator settings remain auditable.
 
+## Real pilot: OpenVLA in LIBERO
+
+`LiberoOpenVLAAdapter` is the integration contract for a pinned upstream OpenVLA + LIBERO deployment. It leaves the upstream OpenVLA template and image/action preprocessing unchanged, and accepts only the task instruction text. A scene patch is applied after reset but before the first policy observation.
+
+The first physical oracle records the maximum motion of one named non-target object. Patches only move an existing non-target free joint and must pass reset-time feasibility checks. `configs/libero_openvla_pilot.json` is the experiment template; replace its checkpoint and task placeholders only after rendering clean rollouts.
+
+The complete execution protocol is in [docs/MINIMUM_PILOT.md](docs/MINIMUM_PILOT.md), and the deliberate prior-art boundaries are in [docs/PRIOR_ART.md](docs/PRIOR_ART.md).
+
+Instruction generation is offline and reviewable, never part of the policy-control loop:
+
+```bash
+python -m pip install -e '.[instruction-generation]'
+export OPENAI_API_KEY='...'
+vla-xrt generate-bank \
+  --task-id selected_libero_task \
+  --instruction 'Place the bowl on the plate.' \
+  --output candidates/selected_libero_task.json
+```
+
+Every candidate begins with `human_approved: false`. Review it, set approval explicitly, and freeze the JSON file before any rollout campaign. Do not commit API keys.
+
 ## Quick start
 
 ```bash

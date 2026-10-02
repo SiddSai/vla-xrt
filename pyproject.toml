@@ -12,6 +12,9 @@ license = {text = "Apache-2.0"}
 [project.scripts]
 vla-xrt = "vla_xrt.cli:main"
 
+[project.optional-dependencies]
+instruction-generation = ["openai>=1.0"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]

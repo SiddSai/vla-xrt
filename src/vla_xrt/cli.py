@@ -11,6 +11,7 @@ from vla_xrt.adapters.mock import DeterministicMockAdapter
 from vla_xrt.attacks.joint.alternating import alternating_search
 from vla_xrt.artifacts.io import read_jsonl, write_json, write_jsonl
 from vla_xrt.core.types import InstructionVariant, ScenePatch, TaskSpec
+from vla_xrt.generation.openai_instruction_bank import generate_instruction_bank, write_instruction_bank
 from vla_xrt.protocol.analyze import summarize
 from vla_xrt.protocol.factorial import run_factorial
 
@@ -71,6 +72,13 @@ def _search(args: argparse.Namespace) -> int:
     return 0
 
 
+def _generate_bank(args: argparse.Namespace) -> int:
+    bank = generate_instruction_bank(args.task_id, args.instruction, args.count, args.model)
+    write_instruction_bank(Path(args.output), bank)
+    print(args.output)
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog="vla-xrt")
     subparsers = parser.add_subparsers(required=True)
@@ -86,6 +94,13 @@ def main() -> int:
     search.add_argument("--seed", type=int, default=0)
     search.add_argument("--rounds", type=int, default=2)
     search.set_defaults(handler=_search)
+    bank = subparsers.add_parser("generate-bank", help="generate offline instruction candidates for human review")
+    bank.add_argument("--task-id", required=True)
+    bank.add_argument("--instruction", required=True)
+    bank.add_argument("--output", required=True)
+    bank.add_argument("--count", type=int, default=6)
+    bank.add_argument("--model", default="gpt-4o-2024-11-20")
+    bank.set_defaults(handler=_generate_bank)
     args = parser.parse_args()
     return args.handler(args)
 

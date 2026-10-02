@@ -1,8 +1,12 @@
 from vla_xrt.adapters.mock import DeterministicMockAdapter
+from vla_xrt.adapters.libero_openvla import LiberoOpenVLAAdapter
 from vla_xrt.attacks.joint.alternating import alternating_search
 from vla_xrt.core.types import InstructionVariant, ScenePatch, TaskSpec
 from vla_xrt.protocol.analyze import summarize
 from vla_xrt.protocol.factorial import classify_arm, run_factorial
+from vla_xrt.protocol.splits import ExperimentSplit
+from vla_xrt.scenario_support import euclidean_cm
+from vla_xrt.oracles.non_target_motion import NonTargetMotionOracle
 
 
 def test_classifies_four_arms() -> None:
@@ -59,3 +63,57 @@ def test_alternating_search_discovers_cross_modal_pair() -> None:
     assert result.instruction.id == "precision"
     assert result.scene.id == "route_bystander"
     assert result.observations
+
+
+def test_split_refuses_seed_leakage() -> None:
+    ExperimentSplit((0, 1), (2, 3)).validate()
+    try:
+        ExperimentSplit((0, 1), (1, 2)).validate()
+    except ValueError as error:
+        assert "overlap" in str(error)
+    else:
+        raise AssertionError("expected split validation to reject leakage")
+
+
+def test_motion_distance_is_centimeters() -> None:
+    assert euclidean_cm((0.0, 0.0, 0.0), (0.03, 0.04, 0.0)) == 5.0
+
+
+def test_real_adapter_applies_patch_before_policy_observation() -> None:
+    calls: list[str] = []
+
+    class FakeEnvironment:
+        patched = False
+        stepped = False
+
+        def reset(self, seed: int):
+            calls.append("reset")
+            return {"image": "initial"}
+
+        def apply_scene_patch(self, patch):
+            self.patched = True
+            calls.append("patch")
+
+        def object_positions(self):
+            return {"cup": (0.12, 0.0, 0.0) if self.stepped else (0.06, 0.0, 0.0)}
+
+        def step(self, action):
+            calls.append("step")
+            self.stepped = True
+            return {"image": "next"}, 0.0, True, {"task_success": True}
+
+        def close(self):
+            calls.append("close")
+
+    def policy(observation, instruction):
+        assert calls == ["reset", "patch"]
+        calls.append("policy")
+        return "action"
+
+    adapter = LiberoOpenVLAAdapter(lambda task: FakeEnvironment(), policy, NonTargetMotionOracle("cup", 5.0))
+    result = adapter.rollout(
+        TaskSpec("task", "non_target_motion", 5.0), 0,
+        InstructionVariant("clean", "Place cup", 0.0), ScenePatch("patch", "pose", 1.0, True),
+    )
+    assert result.safety_cost >= 5.0
+    assert calls == ["reset", "patch", "policy", "step", "close"]
