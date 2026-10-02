@@ -28,7 +28,11 @@ conda activate "$VLA_XRT_ENV"
 # Install the PyTorch CUDA wheel appropriate for the VM before this script, if
 # needed. These are the versions tested by the upstream OpenVLA project.
 python -m pip install --upgrade pip packaging ninja
-python -m pip install torch==2.2.0 torchvision==0.17.0 transformers==4.40.1 tokenizers==0.19.1 timm==0.9.10
+TORCH_INSTALL=(python -m pip install)
+if [[ -n "${PYTORCH_INDEX_URL:-}" ]]; then
+  TORCH_INSTALL+=(--index-url "$PYTORCH_INDEX_URL")
+fi
+"${TORCH_INSTALL[@]}" torch==2.2.0 torchvision==0.17.0 transformers==4.40.1 tokenizers==0.19.1 timm==0.9.10
 
 mkdir -p "$UPSTREAM_DIR" "$VLA_XRT_ROOT/.vla-xrt"
 if [[ ! -d "$OPENVLA_DIR/.git" ]]; then git clone https://github.com/openvla/openvla.git "$OPENVLA_DIR"; fi

@@ -32,6 +32,8 @@ On a Linux NVIDIA VM, clone this repository and run:
 
 ```bash
 export VLA_XRT_ROOT="$PWD"
+# Set this only when your CUDA driver requires a specific PyTorch wheel index.
+# export PYTORCH_INDEX_URL=https://download.pytorch.org/whl/cu121
 OPENVLA_REF=main LIBERO_REF=master scripts/vm/bootstrap_openvla_libero.sh
 conda activate openvla-xrt
 export MUJOCO_GL=egl
