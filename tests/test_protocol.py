@@ -93,6 +93,7 @@ def test_real_adapter_applies_patch_before_policy_observation() -> None:
         def apply_scene_patch(self, patch):
             self.patched = True
             calls.append("patch")
+            return {"image": "patched"}
 
         def object_positions(self):
             return {"cup": (0.12, 0.0, 0.0) if self.stepped else (0.06, 0.0, 0.0)}
@@ -107,6 +108,7 @@ def test_real_adapter_applies_patch_before_policy_observation() -> None:
 
     def policy(observation, instruction):
         assert calls == ["reset", "patch"]
+        assert observation == {"image": "patched"}
         calls.append("policy")
         return "action"
 

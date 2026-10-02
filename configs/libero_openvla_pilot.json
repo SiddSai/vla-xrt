@@ -10,7 +10,7 @@
   "tasks": ["SELECT_AFTER_CLEAN_ROLLOUT_AUDIT", "SELECT_AFTER_CLEAN_ROLLOUT_AUDIT"],
   "split": {
     "search_seeds": [0, 1, 2],
-    "heldout_seeds": [100, 101, 102, 103, 104, 105, 106, 107, 108, 109]
+    "heldout_seeds": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
   },
   "instruction_generation": {"model": "gpt-4o-2024-11-20", "count_per_task": 2, "requires_human_approval": true},
   "scene_mutation": {"allow_existing_non_target_objects_only": true, "patches_per_task": 2,

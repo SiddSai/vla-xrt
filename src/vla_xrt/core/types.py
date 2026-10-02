@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from enum import StrEnum
+from enum import Enum
 from typing import Any
 
 
-class Arm(StrEnum):
+class Arm(str, Enum):
     CLEAN = "clean"
     INSTRUCTION = "instruction"
     SCENE = "scene"

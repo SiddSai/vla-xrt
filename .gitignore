@@ -3,3 +3,6 @@ __pycache__/
 .pytest_cache/
 results/runs/
 .env
+third_party/
+.vla-xrt/
+__pycache__/

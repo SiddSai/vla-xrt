@@ -20,6 +20,63 @@ The first physical oracle records the maximum motion of one named non-target obj
 
 The complete execution protocol is in [docs/MINIMUM_PILOT.md](docs/MINIMUM_PILOT.md), and the deliberate prior-art boundaries are in [docs/PRIOR_ART.md](docs/PRIOR_ART.md).
 
+## VM-ready OpenVLA × LIBERO pilot
+
+The repository now includes the operational path for the first real experiment.
+It uses the upstream OpenVLA helper functions without changing their prompt
+wrapper, image preprocessing, or action post-processing. VLA-XRT applies a
+declared MuJoCo free-joint patch before warm-up and before the first policy
+frame, then writes one complete JSON record per episode.
+
+On a Linux NVIDIA VM, clone this repository and run:
+
+```bash
+export VLA_XRT_ROOT="$PWD"
+OPENVLA_REF=main LIBERO_REF=master scripts/vm/bootstrap_openvla_libero.sh
+conda activate openvla-xrt
+export MUJOCO_GL=egl
+python scripts/vm/preflight.py \
+  --openvla-root third_party/openvla \
+  --libero-root third_party/LIBERO \
+  --output .vla-xrt/preflight.json
+```
+
+Then inspect one clean task and copy the reported description, non-target body,
+and free-joint name into a copy of
+[`configs/scenes/libero_task_template.json`](configs/scenes/libero_task_template.json).
+Only mark a patch `feasible: true` after you have visually checked its reset.
+
+```bash
+python scripts/vm/inspect_libero_task.py \
+  --openvla-root third_party/openvla --suite libero_spatial --task-index 0 \
+  --output .vla-xrt/task-0-inspection.json
+
+python scripts/vm/run_openvla_libero_episode.py \
+  --openvla-root third_party/openvla \
+  --checkpoint <OPENVLA_OR_FINETUNED_CHECKPOINT> \
+  --case configs/scenes/my_task.json --instruction-id clean --scene-id clean \
+  --seed 0 --output results/vm-smoke/clean.json
+```
+
+For the first factorial sweep, create two reviewed instruction variants and two
+feasible scene patches in that frozen case JSON, then run three search initial
+states:
+
+```bash
+python scripts/vm/run_factorial.py \
+  --openvla-root third_party/openvla \
+  --checkpoint <OPENVLA_OR_FINETUNED_CHECKPOINT> \
+  --case configs/scenes/my_task.json --seeds 0 1 2 \
+  --output-dir results/experiment-1-search
+
+python scripts/vm/summarize_factorial.py results/experiment-1-search \
+  --output results/experiment-1-search/summary.json
+```
+
+This runner skips output files that already exist, making interrupted GPU runs
+restartable. The generated `.vla-xrt/upstream-lock.json` captures the exact
+upstream commits used for a VM run.
+
 Instruction generation is offline and reviewable, never part of the policy-control loop:
 
 ```bash

@@ -13,7 +13,7 @@ from vla_xrt.oracles.non_target_motion import NonTargetMotionOracle
 class LiberoEnvironment(Protocol):
     def reset(self, seed: int) -> Mapping[str, object]: ...
     def step(self, action: object) -> tuple[Mapping[str, object], float, bool, Mapping[str, object]]: ...
-    def apply_scene_patch(self, patch: ScenePatch) -> None: ...
+    def apply_scene_patch(self, patch: ScenePatch) -> Mapping[str, object]: ...
     def object_positions(self) -> Mapping[str, Sequence[float]]: ...
     def close(self) -> None: ...
 
@@ -46,7 +46,10 @@ class LiberoOpenVLAAdapter(EnvironmentAdapter):
         env = self.environment_factory(task.id)
         try:
             observation = env.reset(seed)
-            env.apply_scene_patch(scene)
+            # The scene must be changed before the first *policy* observation.
+            # Environments return the post-patch observation because MuJoCo state
+            # mutation invalidates the image returned by reset().
+            observation = env.apply_scene_patch(scene)
             initial_positions = env.object_positions()
             max_displacement = 0.0
             event_step: int | None = None

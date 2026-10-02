@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "vla-xrt"
 version = "0.1.0"
 description = "Cross-modal instruction-scene red teaming protocol for VLA policies"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 
 [project.scripts]
